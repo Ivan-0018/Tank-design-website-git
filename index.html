@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reaction-Tank Design Evolution · iGEM NYUAD 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+</head>
+<body>
+  <canvas id="sand"></canvas>
+
+  <button id="theme-toggle" aria-label="toggle theme"><span id="theme-icon">☾</span></button>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow">Dunelock 2026 · Hardware</div>
+      <h1 id="hero-title"></h1>
+      <p id="hero-sub"></p>
+      <div class="cue">scroll ↓</div>
+    </div>
+  </header>
+
+  <section class="story" id="story">
+    <div class="story-sticky">
+      <div class="stage">
+        <img id="frame" alt="tank iteration" />
+        <div class="loading" id="loading">loading…</div>
+      </div>
+      <div class="panel">
+        <div class="panel-label" id="p-label"></div>
+        <h2 class="panel-title" id="p-title"></h2>
+        <p class="panel-body" id="p-body"></p>
+        <div class="dots" id="dots"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="current" id="current">
+    <div class="current-grid">
+      <div class="current-info">
+        <div class="eyebrow" id="c-label"></div>
+        <h2 id="c-title"></h2>
+        <p id="c-body"></p>
+        <dl class="specs" id="specs"></dl>
+      </div>
+      <div class="viewer-wrap">
+        <model-viewer id="viewer" camera-controls auto-rotate touch-action="pan-y"
+          camera-orbit="18deg 52deg auto" shadow-intensity="1" exposure="1.05"
+          interaction-prompt="none"></model-viewer>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    Dunelock 2026 · reaction-tank design study.
+  </footer>
+
+  <script src="js/content.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+/* ===== Dunelock 2026 brand theming ===== */
+/* Display font: drop superdream.woff2 (or .otf) into /fonts to activate it;
+   until then the brand display font GroovyMricha is used, then Lexend. */
+@font-face{font-family:"Superdream";
+  src:url("../fonts/superdream.woff2") format("woff2"),
+      url("../fonts/superdream.otf") format("opentype");
+  font-weight:400 700;font-display:swap;}
+@font-face{font-family:"GroovyMricha";
+  src:url("../fonts/GroovyMricha.woff2") format("woff2");font-display:swap;}
+:root{
+  --teal:#94C2BB; --orange:#99451A; --deep:#600000; --cream:#FFF6E2; --gold:#FFC235;
+  --display:"Superdream","GroovyMricha","Lexend",sans-serif;
+}
+html[data-theme="dark"]{               /* warm dark */
+  --bg:#1e1512; --bg2:#271b16; --ink:#F2E7CF; --muted:#b7a58f;
+  --accent:#94C2BB; --rose:#c99aa3; --line:#3b2c25; --card:#2a1d18;
+  --sand:#b89b6f; --sand2:#bd8a94; --shadow:rgba(0,0,0,.55);
+}
+html[data-theme="light"]{
+  --bg:#FFF6E2; --bg2:#f8edd4; --ink:#600000; --muted:#9c6a50;
+  --accent:#3E8C82; --rose:#a05f6c; --line:#e7d9bf; --card:#fffaf0;
+  --sand:#9a5f33; --sand2:#a5737d; --shadow:rgba(120,70,20,.18);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Lexend",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-weight:300;
+  -webkit-font-smoothing:antialiased;transition:background .5s ease,color .5s ease;}
+h1,h2{font-weight:600;letter-spacing:-0.01em;margin:0;font-family:"Lexend",sans-serif}
+code{background:var(--card);padding:1px 6px;border-radius:5px;color:var(--accent);font-size:.85em}
+
+#sand{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+body>*:not(#sand):not(#theme-toggle):not(#cursor):not(#cursor-dot){position:relative;z-index:1}
+
+/* custom cursor */
+html.has-cursor, html.has-cursor *{cursor:none}
+#cursor{position:fixed;top:0;left:0;width:30px;height:30px;border:2px solid var(--accent);
+  border-radius:50%;pointer-events:none;z-index:120;opacity:0;
+  transition:width .22s,height .22s,background .22s,border-color .5s,opacity .3s;will-change:transform}
+#cursor.big{width:54px;height:54px;background:color-mix(in srgb,var(--accent) 16%,transparent)}
+#cursor.down{width:22px;height:22px}
+#cursor-dot{position:fixed;top:0;left:0;width:6px;height:6px;background:var(--accent);border-radius:50%;
+  pointer-events:none;z-index:121;will-change:transform;transition:background .5s}
+
+/* theme toggle */
+#theme-toggle{position:fixed;top:18px;right:18px;z-index:90;width:44px;height:44px;border-radius:50%;
+  border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:1.1rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px var(--shadow);transition:all .3s}
+#theme-toggle:hover{transform:scale(1.08)}
+
+/* hero */
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 24px}
+.hero-inner{max-width:860px}
+.eyebrow{color:var(--accent);font-weight:600;letter-spacing:.14em;text-transform:uppercase;font-size:.82rem;margin-bottom:20px}
+.hero h1{font-family:var(--display);font-weight:400;letter-spacing:.005em;
+  font-size:clamp(2.6rem,6.6vw,5rem);line-height:1.04;color:var(--ink)}
+.hero p{color:var(--muted);font-size:clamp(1rem,2.2vw,1.3rem);margin-top:22px;line-height:1.55}
+.cue{margin-top:46px;color:var(--accent);font-weight:600;font-size:.9rem;animation:bob 1.8s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0);opacity:.6}50%{transform:translateY(8px);opacity:1}}
+
+/* scroll story */
+.story{position:relative}
+.story-sticky{position:sticky;top:0;height:100vh;overflow:hidden;display:grid;
+  grid-template-columns:1.05fr .95fr;align-items:center;gap:24px;padding:0 5vw}
+.stage{position:relative;width:100%;height:82vh;display:flex;align-items:center;justify-content:center}
+#frame{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 20px 40px var(--shadow))}
+.loading{position:absolute;color:var(--muted);font-size:.9rem}
+
+.panel{max-width:460px}
+.panel-label{color:var(--accent);font-weight:600;font-size:.82rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px;min-height:1.1em}
+.panel-title{font-size:clamp(1.6rem,3.3vw,2.5rem);line-height:1.1;margin-bottom:16px}
+.panel-body{color:var(--muted);font-size:clamp(1rem,1.55vw,1.16rem);line-height:1.6;font-weight:300}
+
+/* staggered word reveal */
+.reveal span{display:inline-block;opacity:0;transform:translateY(14px);
+  animation:rise .5s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+
+.dots{display:flex;gap:11px;margin-top:28px}
+.dots .dot{width:11px;height:11px;border-radius:50%;background:var(--line);border:0;padding:0;
+  cursor:pointer;transition:all .3s}
+.dots .dot:hover{transform:scale(1.25);background:var(--rose)}
+.dots .dot.on{background:var(--accent);transform:scale(1.3)}
+
+/* dark mode swaps the two accents: rose indicator + rose cursor, teal on hover.
+   (light mode keeps teal indicator/cursor + rose on hover) */
+html[data-theme="dark"] .eyebrow,
+html[data-theme="dark"] .cue,
+html[data-theme="dark"] .panel-label,
+html[data-theme="dark"] .specs dt{color:var(--rose)}
+html[data-theme="dark"] .dots .dot.on{background:var(--rose)}
+html[data-theme="dark"] .dots .dot:hover{background:var(--accent)}
+html[data-theme="dark"] #cursor{border-color:var(--rose)}
+html[data-theme="dark"] #cursor.big{background:color-mix(in srgb,var(--rose) 16%,transparent)}
+html[data-theme="dark"] #cursor-dot{background:var(--rose)}
+
+/* interactive 3d — info left, borderless viewer right */
+.current{padding:13vh 6vw;background:linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%)}
+.current-grid{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:1fr 1.15fr;gap:44px;align-items:center}
+.current-info{max-width:540px}
+.current-info h2{font-size:clamp(1.9rem,4vw,2.9rem);margin-top:6px}
+.current-info>p{color:var(--muted);margin:14px 0 28px;font-size:1.08rem;line-height:1.55}
+.specs{margin:0}
+.specs .row{display:grid;grid-template-columns:132px 1fr;gap:18px;padding:14px 0;border-top:1px solid var(--line)}
+.specs .row:last-child{border-bottom:1px solid var(--line)}
+.specs dt{color:var(--accent);font-weight:600;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;align-self:start;padding-top:2px}
+.specs dd{margin:0;color:var(--ink);font-size:1.02rem;line-height:1.45}
+.viewer-wrap{height:76vh;min-height:440px;border:0;border-radius:0;overflow:visible;background:transparent}
+model-viewer{width:100%;height:100%;--poster-color:transparent;background-color:transparent}
+
+.foot{padding:40px 6vw 60px;color:var(--muted);opacity:.8;font-size:.85rem;text-align:center}
+
+@media(max-width:820px){
+  .story-sticky{grid-template-columns:1fr;grid-template-rows:1fr auto;padding:4vh 6vw 8vh;gap:10px;align-content:center}
+  .stage{height:50vh}.panel{max-width:none}
+  .current-grid{grid-template-columns:1fr;gap:26px}
+  .current-info{max-width:none}
+  .viewer-wrap{height:56vh;min-height:340px}
+}

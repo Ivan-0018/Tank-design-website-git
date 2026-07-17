@@ -2,8 +2,8 @@
 (function () {
   const S = window.SITE;
   // frame-sequence config (technical; not user-edited)
-  const F = { ext: ".webp", pad: 4, total: 392, n2d: 352 };
-  const total = F.total, FPX = 18;
+  const F = { ext: ".webp", pad: 4, total: 436, n2d: 396 };
+  const total = F.total, FPX = 32;
   const pad = (n) => String(n).padStart(F.pad, "0");
   const path = (theme, i) => `frames-${theme}/f_${pad(i)}${F.ext}`;
 
@@ -142,6 +142,9 @@
 
   /* ---------- model ---------- */
   const viewer = document.getElementById("viewer");
+  // Update the model by swapping the file at S.current.model (js/content.js).
+  // Needs to be served over http(s) (GitHub Pages, the iGEM wiki, live-server) —
+  // not the raw htmlpreview link, which can't serve a binary .glb.
   if (viewer) viewer.src = S.current.model;
 
   /* ---------- custom cursor (circle, theme-coloured) ----------

@@ -130,11 +130,11 @@
      the hero, and down past iteration 6 to scrub the 3D rotate-out and reach
      the specs section normally.
      TUNING: SNAP_MS_* = morph length. COOLDOWN_MS = pause before the next
-     gesture is accepted (raise it if a trackpad flick skips two steps).   */
+     gesture is accepted; 0 = takes over instantly on the next scroll.     */
   const HOLDS = iters.map((it) => it.hold);          // frame index of each iteration
   const SNAP_MS_SHORT = 2000;   // iterations 1->2 .. 4->5
   const SNAP_MS_LONG = 3500;    // the longer 5->6 consolidation
-  const COOLDOWN_MS = 220;
+  const COOLDOWN_MS = 0;
 
   let locked = false, cooldownUntil = 0;
   const frameToY = (f) => story.offsetTop + (f / (total - 1)) * scrollable();

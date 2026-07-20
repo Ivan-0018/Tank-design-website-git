@@ -121,12 +121,80 @@
     const idx = Math.min(total - 1, Math.round(p * (total - 1)));
     if (idx !== curIdx) { curIdx = idx; showFrame(idx); showPanel(idx); }
   }
-  window.addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(render); } }, { passive: true });
+
+  /* ---------- soft directional snap to the next iteration ----------
+     You can still scrub freely. When you stop scrolling, the page eases on
+     to the NEXT iteration (or back to the previous one if you were scrolling
+     up) and plays that morph slowly. Scrolling again cancels it, so you
+     always keep control. Snapping switches off after the last iteration so
+     you can reach the 3D section normally.
+     TUNING: SNAP_MS_* below = how long a full morph takes.               */
+  const HOLDS = iters.map((it) => it.hold);          // frame index of each iteration
+  const SNAP_MS_SHORT = 2000;   // iterations 1->2 .. 4->5
+  const SNAP_MS_LONG = 3500;    // the longer 5->6 consolidation
+  const SNAP_IDLE_MS = 150;     // how long you must pause before it eases on
+
+  let snapping = false, snapTimer = null, userMoved = false;
+  let lastY = window.scrollY, dir = 1;
+
+  const frameToY = (f) => story.offsetTop + (f / (total - 1)) * scrollable();
+  const cancelSnap = () => { snapping = false; };
+
+  function snapDuration(from, to) {
+    let seg = 70;
+    const lo = Math.min(from, to), hi = Math.max(from, to);
+    for (let i = 1; i < HOLDS.length; i++)
+      if (hi <= HOLDS[i] && lo >= HOLDS[i - 1]) { seg = HOLDS[i] - HOLDS[i - 1]; break; }
+    const full = seg >= 90 ? SNAP_MS_LONG : SNAP_MS_SHORT;
+    return Math.max(420, Math.round(full * Math.min(1, Math.abs(to - from) / seg)));
+  }
+
+  function easeTo(y, dur) {
+    const start = window.scrollY, dist = y - start;
+    if (Math.abs(dist) < 2) { userMoved = false; return; }
+    snapping = true;
+    const t0 = performance.now();
+    const ease = (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+    (function step(ts) {
+      if (!snapping) return;                       // user took control back
+      const p = Math.min(1, (ts - t0) / dur);
+      window.scrollTo(0, start + dist * ease(p));
+      if (p < 1) requestAnimationFrame(step);
+      else { snapping = false; userMoved = false; }
+    })(performance.now());
+  }
+
+  function scheduleSnap() {
+    clearTimeout(snapTimer);
+    snapTimer = setTimeout(() => {
+      if (snapping || !userMoved) return;
+      if (curIdx >= HOLDS[HOLDS.length - 1]) return;   // past iter 6 -> free scroll
+      if (curIdx <= 0 && dir < 0) return;              // back at the hero
+      let target = null;
+      if (dir > 0) target = HOLDS.find((h) => h > curIdx + 1);
+      else for (let i = HOLDS.length - 1; i >= 0; i--)
+        if (HOLDS[i] < curIdx - 1) { target = HOLDS[i]; break; }
+      if (target == null) { userMoved = false; return; }
+      easeTo(frameToY(target), snapDuration(curIdx, target));
+    }, SNAP_IDLE_MS);
+  }
+
+  // real user input cancels an in-flight snap and arms the next one
+  ["wheel", "touchmove", "keydown"].forEach((ev) =>
+    window.addEventListener(ev, () => { userMoved = true; cancelSnap(); }, { passive: true }));
+
+  window.addEventListener("scroll", () => {
+    const y = window.scrollY;
+    if (y !== lastY) { dir = y > lastY ? 1 : -1; lastY = y; }
+    if (!ticking) { ticking = true; requestAnimationFrame(render); }
+    if (userMoved && !snapping) scheduleSnap();
+  }, { passive: true });
   window.addEventListener("resize", render);
   showPanel(0); render();
 
   /* ---------- click dot -> smooth scroll to iteration ---------- */
   function scrollToFrame(frame) {
+    cancelSnap(); userMoved = false;          // a dot click overrides any snap
     const target = story.offsetTop + (frame / (total - 1)) * scrollable();
     const start = window.scrollY, dist = target - start;
     const dur = Math.min(900, 320 + Math.abs(dist) * 0.35);

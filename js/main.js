@@ -122,23 +122,44 @@
     if (idx !== curIdx) { curIdx = idx; showFrame(idx); showPanel(idx); }
   }
 
-  /* ---------- soft directional snap to the next iteration ----------
-     You can still scrub freely. When you stop scrolling, the page eases on
-     to the NEXT iteration (or back to the previous one if you were scrolling
-     up) and plays that morph slowly. Scrolling again cancels it, so you
-     always keep control. Snapping switches off after the last iteration so
-     you can reach the 3D section normally.
-     TUNING: SNAP_MS_* below = how long a full morph takes.               */
+  /* ---------- hard keyframe lock through the iterations ----------
+     Inside the story section the native scroll is taken over: the smallest
+     scroll gesture steps you to the NEXT iteration (or the previous one when
+     scrolling up) and plays that morph slowly. Input is ignored until it
+     lands. The lock releases at both ends — scroll up past iteration 1 to
+     the hero, and down past iteration 6 to scrub the 3D rotate-out and reach
+     the specs section normally.
+     TUNING: SNAP_MS_* = morph length. COOLDOWN_MS = pause before the next
+     gesture is accepted (raise it if a trackpad flick skips two steps).   */
   const HOLDS = iters.map((it) => it.hold);          // frame index of each iteration
   const SNAP_MS_SHORT = 2000;   // iterations 1->2 .. 4->5
   const SNAP_MS_LONG = 3500;    // the longer 5->6 consolidation
-  const SNAP_IDLE_MS = 150;     // how long you must pause before it eases on
+  const COOLDOWN_MS = 220;
 
-  let snapping = false, snapTimer = null, userMoved = false;
-  let lastY = window.scrollY, dir = 1;
-
+  let locked = false, cooldownUntil = 0;
   const frameToY = (f) => story.offsetTop + (f / (total - 1)) * scrollable();
-  const cancelSnap = () => { snapping = false; };
+  const cancelSnap = () => { locked = false; };
+
+  // is the sticky story section currently filling the viewport?
+  const inStory = () => {
+    const r = story.getBoundingClientRect();
+    return r.top <= 0 && r.bottom >= window.innerHeight;
+  };
+
+  function nearestIter() {
+    let best = 0, bd = Infinity;
+    HOLDS.forEach((h, i) => { const d = Math.abs(h - curIdx); if (d < bd) { bd = d; best = i; } });
+    return best;
+  }
+
+  // next iteration in direction d, or null if we should release the scroll
+  function stepTarget(d) {
+    const last = HOLDS.length - 1;
+    if (d < 0 && curIdx > HOLDS[last] + 2) return HOLDS[last];  // back from the 3D spin
+    const i = nearestIter() + d;
+    if (i < 0 || i > last) return null;
+    return HOLDS[i];
+  }
 
   function snapDuration(from, to) {
     let seg = 70;
@@ -149,52 +170,61 @@
     return Math.max(420, Math.round(full * Math.min(1, Math.abs(to - from) / seg)));
   }
 
-  function easeTo(y, dur) {
+  function lockTo(y, dur) {
     const start = window.scrollY, dist = y - start;
-    if (Math.abs(dist) < 2) { userMoved = false; return; }
-    snapping = true;
+    if (Math.abs(dist) < 2) return;
+    locked = true;
     const t0 = performance.now();
     const ease = (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
     (function step(ts) {
-      if (!snapping) return;                       // user took control back
+      if (!locked) return;
       const p = Math.min(1, (ts - t0) / dur);
       window.scrollTo(0, start + dist * ease(p));
       if (p < 1) requestAnimationFrame(step);
-      else { snapping = false; userMoved = false; }
+      else { locked = false; cooldownUntil = performance.now() + COOLDOWN_MS; }
     })(performance.now());
   }
 
-  function scheduleSnap() {
-    clearTimeout(snapTimer);
-    snapTimer = setTimeout(() => {
-      if (snapping || !userMoved) return;
-      if (curIdx >= HOLDS[HOLDS.length - 1]) return;   // past iter 6 -> free scroll
-      if (curIdx <= 0 && dir < 0) return;              // back at the hero
-      let target = null;
-      if (dir > 0) target = HOLDS.find((h) => h > curIdx + 1);
-      else for (let i = HOLDS.length - 1; i >= 0; i--)
-        if (HOLDS[i] < curIdx - 1) { target = HOLDS[i]; break; }
-      if (target == null) { userMoved = false; return; }
-      easeTo(frameToY(target), snapDuration(curIdx, target));
-    }, SNAP_IDLE_MS);
+  // one gesture = one iteration
+  function drive(d, e) {
+    if (!inStory()) return;
+    const t = stepTarget(d);
+    if (t == null) return;                 // at an end -> let the page scroll
+    e.preventDefault();                    // hard lock
+    if (locked || performance.now() < cooldownUntil) return;
+    lockTo(frameToY(t), snapDuration(curIdx, t));
   }
 
-  // real user input cancels an in-flight snap and arms the next one
-  ["wheel", "touchmove", "keydown"].forEach((ev) =>
-    window.addEventListener(ev, () => { userMoved = true; cancelSnap(); }, { passive: true }));
+  window.addEventListener("wheel", (e) => {
+    if (Math.abs(e.deltaY) < 1) return;
+    drive(e.deltaY > 0 ? 1 : -1, e);
+  }, { passive: false });
+
+  let touchY = null;
+  window.addEventListener("touchstart", (e) => { touchY = e.touches[0].clientY; }, { passive: true });
+  window.addEventListener("touchmove", (e) => {
+    if (touchY == null) return;
+    const dy = touchY - e.touches[0].clientY;
+    if (Math.abs(dy) < 8) return;
+    touchY = e.touches[0].clientY;
+    drive(dy > 0 ? 1 : -1, e);
+  }, { passive: false });
+
+  const KEYS = { ArrowDown: 1, PageDown: 1, " ": 1, ArrowUp: -1, PageUp: -1 };
+  window.addEventListener("keydown", (e) => {
+    const d = KEYS[e.key];
+    if (d) drive(d, e);
+  }, { passive: false });
 
   window.addEventListener("scroll", () => {
-    const y = window.scrollY;
-    if (y !== lastY) { dir = y > lastY ? 1 : -1; lastY = y; }
     if (!ticking) { ticking = true; requestAnimationFrame(render); }
-    if (userMoved && !snapping) scheduleSnap();
   }, { passive: true });
   window.addEventListener("resize", render);
   showPanel(0); render();
 
   /* ---------- click dot -> smooth scroll to iteration ---------- */
   function scrollToFrame(frame) {
-    cancelSnap(); userMoved = false;          // a dot click overrides any snap
+    cancelSnap();                             // a dot click overrides the lock
     const target = story.offsetTop + (frame / (total - 1)) * scrollable();
     const start = window.scrollY, dist = target - start;
     const dur = Math.min(900, 320 + Math.abs(dist) * 0.35);
